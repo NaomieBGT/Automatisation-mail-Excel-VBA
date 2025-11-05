@@ -1,0 +1,72 @@
+' GitHub-friendly VBA : automatisation de l'envoi de reporting client par mail
+' Auteur : Naomie BAGATE
+' Description : Macro pour générer automatiquement des mails à partir d'une feuille "Contacts"
+' avec l'objet et le corps du mail dynamiques selon le mois en cours.
+
+Sub EnvoiReportingClient()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim xlSheet As Worksheet
+    Dim i As Integer
+    Dim langue As String, compte As String
+    Dim destinataire As String, cc1 As String, cc2 As String, cc3 As String
+    Dim responsable As String, mailResponsable As String
+    Dim pj As String, objet As String, corps As String
+    Dim moisAnnee As String
+
+    ' Récupération du mois et de l'année actuels pour l'objet et le corps du mail
+    moisAnnee = Format(Date, "mmmm yyyy") ' ex: "novembre 2025"
+
+    ' Crée une instance d'Outlook
+    Set OutlookApp = CreateObject("Outlook.Application")
+   
+    ' Sélectionne la feuille "Contacts"
+    Set xlSheet = ThisWorkbook.Sheets("Contacts")
+
+    i = 2 ' Commence à la ligne 2 (les données commencent à partir de la ligne 2)
+
+    ' Boucle sur toutes les lignes tant qu'il y a un compte
+    Do While xlSheet.Cells(i, 1).Value <> ""
+        ' Récupération des données de chaque colonne
+        langue = xlSheet.Cells(i, 1).Value
+        compte = xlSheet.Cells(i, 2).Value
+        destinataire = xlSheet.Cells(i, 3).Value
+        cc1 = xlSheet.Cells(i, 4).Value
+        cc2 = xlSheet.Cells(i, 5).Value
+        cc3 = xlSheet.Cells(i, 6).Value
+        responsable = xlSheet.Cells(i, 7).Value
+        mailResponsable = xlSheet.Cells(i, 8).Value
+        pj = Replace(xlSheet.Cells(i, 9).Value, """", "") ' Nettoie les guillemets
+
+        ' Création de l'objet du mail
+        objet = "Reporting Client – " & compte & " – " & moisAnnee
+
+        ' Corps du message selon la langue
+        If langue = "fr" Then
+            corps = "Bonjour," & vbCrLf & vbCrLf & _
+                    "Veuillez trouver ci-joint le reporting client jusqu'à fin " & moisAnnee & "." & vbCrLf & vbCrLf & _
+                    "Le document résume les indicateurs clés et les données par compte." & vbCrLf & vbCrLf & _
+                    "Bien cordialement"
+        Else
+            corps = "Hello," & vbCrLf & vbCrLf & _
+                    "Please find attached the client reporting up to the end of " & moisAnnee & "." & vbCrLf & vbCrLf & _
+                    "The document summarizes key indicators and account-level data." & vbCrLf & vbCrLf & _
+                    "Kind regards"
+        End If
+
+        ' Création et remplissage du mail
+        Set OutlookMail = OutlookApp.CreateItem(0)
+        With OutlookMail
+            .To = destinataire
+            .CC = cc1 & ";" & cc2 & ";" & cc3 & ";" & mailResponsable
+            .Subject = objet
+            .Body = corps
+            If pj <> "" Then .Attachments.Add pj ' Ajoute la pièce jointe si présente
+            .Display ' Ouvre le mail pour vérification (.Send pour envoi direct)
+        End With
+
+        i = i + 1 ' Passe à la ligne suivante
+    Loop
+
+    MsgBox "Tous les mails ont été générés avec succès."
+End Sub
